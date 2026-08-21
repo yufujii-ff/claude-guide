@@ -151,6 +151,13 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
 /* 図の中の補足は左端そろえ（画面外へのはみ出し防止） */
 .stack .tip::after{left:0;transform:none}
 .stack .tip::before{left:16px}
+
+/* 表内でも補足を表示できるようにする（横に広がらない表のみ） */
+.tbl.tip-ok{overflow:visible}
+@media (max-width:640px){
+  .tbl .tip::after{left:0;transform:none}
+  .tbl .tip::before{left:16px}
+}
 </style>
 </head>
 <body>
@@ -258,14 +265,14 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
   <h3>だから設定が要る、という因果</h3>
   <p>この持病を知ってから設定の作法を見返すと、全部が同じ方向を向いていた。</p>
 
-  <div class="tbl">
+  <div class="tbl tip-ok">
   <table>
     <thead><tr><th>設定の作法（③）</th><th>何のためか（①への対処）</th></tr></thead>
     <tbody>
       <tr><td>CLAUDE.md は200行以内</td><td>長いほど中盤が読み飛ばされる</td></tr>
       <tr><td>段階的開示（必要な時だけ読む）</td><td>使わない情報を載せない＝中盤を作らない</td></tr>
       <tr><td>条件付きで読み込むルール</td><td>同上</td></tr>
-      <tr><td>サブエージェントに委譲し要約だけ返す</td><td>中盤を親のコンテキストに作らない</td></tr>
+      <tr><td><span class="tip" tabindex="0" data-tip="切り出したタスクを任せる相手。自分専用の作業領域を持ち、途中経過を親に返さず結果だけを返す。→ コンテキストのパンク防止、並列処理による高速化、役割の専門化、エラー時のやり直し最小化につながる">サブエージェント</span>に委譲し要約だけ返す</td><td>中盤を親のコンテキストに作らない</td></tr>
     </tbody>
   </table>
   </div>
@@ -291,7 +298,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
 
 ~/<span class="a">.claude</span>/               <span class="c">← 全プロジェクト共通（自分の好み）</span></pre>
 
-  <p>役割は大きく2つに割れる。<strong>お願いを日本語で書く</strong>もの（CLAUDE.md・rules・skills）と、<strong>できることを機械的に決める</strong>もの（settings.json）。</p>
+  <p>役割は大きく2つに割れる。<strong>お願いを日本語で書く</strong>もの（CLAUDE.md・rules・skills）と、<strong>できることを機械的に決める</strong>もの（<span class="tip" tabindex="0" data-tip="日本語では書けない。しかし、Claude Code に頼めば作ってくれる">settings.json</span>）。</p>
 
   <div class="tbl">
   <table>
