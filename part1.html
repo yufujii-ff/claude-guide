@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第1部 Claude Code とは何か — AI学習まとめ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E7E8EC; --paper:#FCFCFD; --ink:#15171C; --sub:#5C6373;
+  --line:#D2D5DD; --line-soft:#E4E6EB;
+  --accent:#3B45D6; --accent-soft:#E7E8FB;
+  --ochre:#9C6716; --ochre-soft:#F6EEDF;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+  --disp:'Shippori Mincho B1',serif;
+  --body:'Zen Kaku Gothic New',-apple-system,sans-serif;
+  --r:3px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);
+  line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:0 28px}
+
+/* ---- シリーズナビ ---- */
+.series{position:sticky;top:0;z-index:20;background:rgba(231,232,236,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.series-in{max-width:760px;margin:0 auto;padding:11px 28px;
+  display:flex;gap:6px;align-items:center;overflow-x:auto}
+.series a{font-family:var(--mono);font-size:11.5px;text-decoration:none;
+  color:var(--sub);padding:4px 10px;border-radius:2px;white-space:nowrap;
+  border:1px solid transparent}
+.series a:hover{color:var(--ink);background:#DDDFE5}
+.series a.on{color:#fff;background:var(--accent)}
+.series .brand{font-family:var(--body);font-size:11.5px;color:#9AA0AD;
+  margin-right:8px;white-space:nowrap}
+
+/* ---- hero ---- */
+.hero{padding:64px 0 48px}
+.part{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  color:var(--accent);margin-bottom:18px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(32px,6vw,52px);
+  line-height:1.22;margin-bottom:18px}
+.lede{font-size:16px;color:var(--sub);line-height:1.95}
+.meta{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11.5px;color:#9AA0AD}
+
+/* ---- 本文 ---- */
+section{padding:44px 0;border-top:1px solid var(--line)}
+.num{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:#9AA0AD;margin-bottom:10px}
+h2{font-family:var(--disp);font-weight:600;font-size:27px;
+  line-height:1.4;margin-bottom:20px}
+h3{font-family:var(--body);font-weight:700;font-size:16.5px;
+  margin:28px 0 10px}
+p{margin-bottom:15px}
+p:last-child{margin-bottom:0}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin-bottom:6px}
+li::marker{color:#A9AEBA}
+strong{font-weight:700}
+code{font-family:var(--mono);font-size:.88em;background:#EDEEF2;
+  padding:1px 5px;border-radius:3px}
+
+pre{background:#1B1E25;color:#DCDFE6;font-family:var(--mono);
+  font-size:12.5px;line-height:1.85;padding:18px 20px;border-radius:var(--r);
+  overflow-x:auto;margin:20px 0}
+pre .c{color:#767D8C}
+pre .a{color:#A8B3F5}
+
+.pull{font-family:var(--disp);font-size:20px;line-height:1.65;
+  color:var(--accent);border-left:3px solid var(--accent);
+  padding:4px 0 4px 20px;margin:26px 0}
+
+.note{border-left:2px solid var(--ochre);background:var(--ochre-soft);
+  padding:14px 18px;margin:22px 0;font-size:13.5px;line-height:1.8}
+.note strong{color:var(--ochre)}
+
+table{width:100%;border-collapse:collapse;background:var(--paper);
+  border:1px solid var(--line);font-size:13.5px;margin:20px 0}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft);
+  vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--sub);font-weight:500;background:#F4F5F7}
+tr:last-child td{border-bottom:none}
+td code{background:transparent;padding:0;color:var(--accent);font-weight:700}
+.tbl{overflow-x:auto}
+
+/* ---- 3層図 ---- */
+.stack{margin:26px 0;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:var(--paper)}
+.layer{padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.layer:last-child{border-bottom:none}
+.layer .id{font-family:var(--mono);font-size:16px;font-weight:700;
+  color:var(--accent);flex:none;width:24px}
+.layer .nm{font-weight:700;font-size:15px;flex:none;min-width:150px}
+.layer .ds{font-size:13.5px;color:var(--sub);flex:1;min-width:180px}
+.layer.l3{background:var(--accent-soft)}
+
+/* ---- ループ図 ---- */
+.loop{counter-reset:s;margin:22px 0;padding:0;list-style:none}
+.loop li{counter-increment:s;position:relative;padding:9px 0 9px 42px;
+  border-bottom:1px dashed var(--line);font-size:14px;margin:0}
+.loop li:last-child{border-bottom:none}
+.loop li::before{content:counter(s);position:absolute;left:0;top:9px;
+  font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+
+footer{padding:40px 0 60px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--sub)}
+.nextlink{display:inline-block;margin-top:18px;font-family:var(--mono);
+  font-size:12.5px;text-decoration:none;padding:9px 16px;
+  border:1px solid var(--accent);border-radius:var(--r);color:var(--accent)}
+.nextlink:hover{background:var(--accent);color:#fff}
+.src{margin-top:24px;font-size:12.5px;line-height:1.85}
+.src a{color:var(--sub)}
+
+@media (max-width:640px){
+  .wrap{padding:0 20px}
+  .series-in{padding:10px 20px}
+  .hero{padding:44px 0 36px}
+  .pull{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav class="series">
+  <div class="series-in">
+    <span class="brand">AI学習まとめ</span>
+    <a href="index.html">目次</a>
+    <a href="part1.html" class="on">1 Claude Code</a>
+    <a href="part2.html">2 記事①</a>
+    <a href="part3.html">3 記事②</a>
+    <a href="part4.html">4 記事③</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="part">PART 1 / 4</div>
+  <h1>Claude Code とは何か</h1>
+  <p class="lede">名前に Code とあるが、コードを書くためだけの道具ではない。「AIに手足と権限をつけて、自分のPCの上でループを回す仕組み」——それが実体だと分かるまでに、ずいぶん遠回りをした。この第1部では、そこに至るまでに引っかかった順序で書いていく。</p>
+  <div class="meta">学習まとめ 第1部 ／ 2026-08</div>
+</header>
+
+<main class="wrap">
+
+<section id="s1">
+  <div class="num">01</div>
+  <h2>チャットとの違いは「答えるか、やるか」</h2>
+  <p>ブラウザで使うAIに質問すると、答えが返ってくる。そこから先——ファイルを開く、コマンドを打つ、結果を確認する——は人間の仕事だった。</p>
+  <p>Claude Code は、その先をAI自身がやる。ファイルの読み書き、コマンドの実行、gitの操作を、自分で判断しながら順番にこなしていく。チャットAIが「答えを返すだけ」なのに対して、こちらは「実際に手を動かす」。</p>
+  <div class="pull">質問に答える存在から、代わりに作業する存在へ。</div>
+  <p>この違いは体験してみると分かりやすい。チャットで「このコマンドを打ってください」と言われてターミナルに貼り付ける、あの手作業が丸ごと消える。</p>
+
+  <h3>コード専用ではない</h3>
+  <p>ここは名前に騙されやすいところだった。実際には、ファイル操作・データ整形・レポート作成・ドキュメント生成といった業務もこなせる。エクセルの整形、議事録の要約、データ分析の補助のように、コードを書かない仕事でも使える。</p>
+  <p>フォルダに CSV を置いて「読んで集計して」と頼めば、それで成立する。プログラミングではなく、<strong>フォルダの中身をAIに任せる</strong>という使い方になる。</p>
+</section>
+
+<section id="s2">
+  <div class="num">02</div>
+  <h2>どう動いているのか — agentic ループ</h2>
+  <p>中で何が起きているかを知ると、設定ファイルの意味が一気に分かる。やっていることは「読む → 考える → ツールを使う → 結果を見る → 繰り返す」のループで、6段階に整理されている。</p>
+
+  <ol class="loop">
+    <li>ユーザーがターミナルにメッセージを入力する</li>
+    <li>システムプロンプトを組み立てる — 現在の日付、gitの状態、CLAUDE.md、使えるツール一覧</li>
+    <li>APIを呼び出す → モデルが「このツールを使いたい」と返す</li>
+    <li>権限チェック — 自動承認 / 確認を求める / ブロック のどれかを決める</li>
+    <li>ツールを実行し、結果（ファイルの中身、コマンドの出力）を会話に追加する</li>
+    <li>結果を受け取ったモデルが、次のツールを呼ぶか、最終的な返答をする。ツール呼び出しが無くなるまで繰り返す</li>
+  </ol>
+
+  <p><strong>2番と4番が、後で出てくる設定ファイルの働く場所になる。</strong>何を読ませるかが2番、何を許すかが4番。この2箇所しかない、と分かってしまえば設定の話は難しくない。</p>
+
+  <h3>ローカルで完結している</h3>
+  <p>このループは手元のターミナルのプロセスの中だけで回る。WebFetch や WebSearch、MCPサーバーのように明示的に外部を呼ぶツールを使わない限り、ファイルもシェルも認証情報もマシンの外には出ない。</p>
+  <p>だから業務データを置いたフォルダで動かせる。ブラウザにファイルをアップロードする使い方とは、ここが決定的に違う。</p>
+</section>
+
+<section id="s3">
+  <div class="num">03</div>
+  <h2>どこまでが Claude Code なのか</h2>
+  <p>学習していて一番混乱したのがここだった。「Claude Code」「.claude」「CLAUDE.md」が、どれも似た名前で別のものを指している。3階建てで考えると整理できた。</p>
+
+  <div class="stack">
+    <div class="layer">
+      <span class="id">①</span>
+      <span class="nm">Claude（モデル）</span>
+      <span class="ds">判断する部分。頭脳。Claude Code 専用ではなく、チャットで動いているものと同じ種類</span>
+    </div>
+    <div class="layer">
+      <span class="id">②</span>
+      <span class="nm">Claude Code</span>
+      <span class="ds">ツール本体。上のループを回し、ツールを実行し、権限をチェックする仕組み</span>
+    </div>
+    <div class="layer l3">
+      <span class="id">③</span>
+      <span class="nm">.claude/</span>
+      <span class="ds">設定ファイル群。ループの振る舞いを外から調整する。自分が書く場所</span>
+    </div>
+  </div>
+
+  <p>面白いのは、<strong>② が「AI」ではない</strong>ことだ。②はAIに手足をつけて回す機構であって、賢さそのものは①が担っている。この分離が分かると、「設定を変えてもモデルは賢くならない」という当たり前のことが腑に落ちる。</p>
+
+  <h3>入口は1つではない</h3>
+  <p>Claude Code は2025年2月に限定リサーチプレビューとして公開され、同年5月に一般提供が始まった。登場当初はターミナル中心だったが、2026年時点ではターミナル、IDE、デスクトップアプリ、ブラウザから使える。Remote Control を使えば、手元のマシンで動いているセッションをスマートフォンから続きから操作することもできる。</p>
+  <p>つまり「Claude Code＝黒い画面」ではなく、<strong>同じ仕組みへの入口が複数ある</strong>状態になっている。</p>
+</section>
+
+<section id="s4">
+  <div class="num">04</div>
+  <h2>なぜ設定ファイルが要るのか — モデルの持病</h2>
+  <p>ここが、この第1部で一番書きたかったところ。<strong>設定ファイルの作法は、ほぼ全部が①の弱点への対処だった。</strong></p>
+
+  <h3>Lost in the Middle</h3>
+  <p>スタンフォード大学 Liu らの論文「Lost in the Middle: How Language Models Use Long Contexts」（2023年公開、2024年TACL掲載）で報告された現象。実験の作りが分かりやすい。20個の文書をコンテキストに入れ、<strong>正解が書いてある文書の位置だけを変えて</strong>、同じ質問に答えさせた。</p>
+  <p>結果は綺麗なU字カーブになった。正解が先頭または末尾にあるときは精度が高く、真ん中にあると大きく落ちる。位置を変えただけで精度が30%以上落ちたケースもあった。さらに、正解を真ん中に置いた場合、文書を一切与えずに記憶だけで答えさせたときより精度が下がることさえあった。</p>
+
+  <div class="pull">情報を渡したのに、渡さないより悪くなる。</div>
+
+  <p>この偏りは設定ミスではなく、Transformer の構造に由来する。ひとつは causal mask で、各トークンは自分より前しか参照できないため、先頭付近のトークンが後続すべてから参照されて相対的に重みを集める。もうひとつは多くのモデルが採用する位置エンコーディング RoPE で、距離が離れるほど注意が減衰しやすい。</p>
+  <p><strong>原因が構造側にあるため、書き方の工夫だけでは根本解決しない。</strong>2026年時点、コンテキストウィンドウが数十万トークン規模まで広がっても、根本的には解消されていないとされる。</p>
+
+  <div class="note"><strong>ただし断定は避けたい。</strong>「コンテキストが長い＝必ず起きる」わけではなく、普遍性や重大性はモデルやタスクによって変わるという慎重な見方もある。設計の前提として意識しておく、くらいの温度が適切だと思う。</div>
+
+  <h3>だから設定が要る、という因果</h3>
+  <p>この持病を知ってから設定の作法を見返すと、全部が同じ方向を向いていた。</p>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th>設定の作法（③）</th><th>何のためか（①への対処）</th></tr></thead>
+    <tbody>
+      <tr><td>CLAUDE.md は200行以内</td><td>長いほど中盤が読み飛ばされる</td></tr>
+      <tr><td>段階的開示（必要な時だけ読む）</td><td>使わない情報を載せない＝中盤を作らない</td></tr>
+      <tr><td>条件付きで読み込むルール</td><td>同上</td></tr>
+      <tr><td>サブエージェントに委譲し要約だけ返す</td><td>中盤を親のコンテキストに作らない</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>②の側にも受け皿がある。作業が一区切りついたら会話履歴をクリアするのが最も単純で効果的な方法で、Claude Code には clear コマンドがある。また /context コマンドで、いま何がコンテキストを占めているかの内訳を見られる。有効にしたまま使っていないMCPサーバーが、知らないうちに圧迫していることがあるという。</p>
+
+  <div class="note"><strong>皮肉な話として。</strong>ルールファイルやMCPサーバーは、会話を始める前からコンテキストを圧迫する。ツール定義とルールだけで数万トークンを使ってしまうと、肝心のファイルを読み込ませた瞬間に「中間」が生まれる。<strong>ハーネスを整えすぎると、それ自体が Lost in the Middle を招く。</strong>ここは自分でも意外だった。</div>
+</section>
+
+<section id="s5">
+  <div class="num">05</div>
+  <h2>.claude の中身</h2>
+  <p>以上を踏まえて、③の中身を見ていく。ドットで始まるので Finder では見えない（<code>⌘ ⇧ .</code> で表示切り替え）。</p>
+
+  <pre>プロジェクト/
+  CLAUDE.md            <span class="c">← 毎回読まれる指示書</span>
+  <span class="a">.claude</span>/
+    settings.json      <span class="c">← 権限。共有する</span>
+    settings.local.json<span class="c">← 権限。個人用、Git除外</span>
+    rules/             <span class="c">← 領域別のルール</span>
+    skills/            <span class="c">← 繰り返す手順</span>
+    agents/            <span class="c">← 別コンテキストの専門家</span>
+
+~/<span class="a">.claude</span>/               <span class="c">← 全プロジェクト共通（自分の好み）</span></pre>
+
+  <p>役割は大きく2つに割れる。<strong>お願いを日本語で書く</strong>もの（CLAUDE.md・rules・skills）と、<strong>できることを機械的に決める</strong>もの（settings.json）。</p>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th>ファイル</th><th>書くこと</th><th>効き方</th></tr></thead>
+    <tbody>
+      <tr><td><code>CLAUDE.md</code></td><td>プロジェクトの前提・方針・やらないこと</td><td>お願い</td></tr>
+      <tr><td><code>rules/</code></td><td>領域ごとの細かい規約</td><td>お願い</td></tr>
+      <tr><td><code>skills/</code></td><td>繰り返す作業の手順</td><td>お願い</td></tr>
+      <tr><td><code>agents/</code></td><td>役割特化の分身への指示</td><td>お願い</td></tr>
+      <tr><td><code>settings.json</code></td><td>ツール使用の許可・禁止</td><td><strong>強制</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>この「お願い / 強制」の線引きが実務では効く。文章で頼んだルールは破られることがあるが、<code>deny</code> に書いた禁止はループの4番で機械的に弾かれる。<strong>取り返しのつかない操作は、頼むのではなく禁止する。</strong></p>
+
+  <pre>{
+  <span class="a">"permissions"</span>: {
+    <span class="a">"deny"</span>: ["Write(./data/**)", "Bash(rm:*)"],
+    <span class="a">"ask"</span>:  ["Bash(git push:*)"]
+  }
+}</pre>
+
+  <p>元データのフォルダへの書き込みを禁止しておけば、うっかり上書きされる事故が仕組みで防げる。読むのは許可されたままなので、集計はできる。</p>
+</section>
+
+<section id="s6">
+  <div class="num">06</div>
+  <h2>学んだことを一行で</h2>
+  <div class="pull">その場のプロンプトで直すのをやめて、次も効く場所に書く。</div>
+  <p>Claude Code の設定ファイルが何十種類あろうと、言っていることはこれに尽きる。①には構造的な弱点があり、②がそれを扱う道具を用意していて、③で自分が設計する。三層はそういう関係になっていた。</p>
+  <p>そして、AIに任せる範囲と、機械が決定的に守る範囲の境界を自分の手で引くこと。これは Claude Code に限らず、AIエージェント全般に効く考え方だと思う。次の第2部以降で読む記事も、結局は同じ問題を別の角度から扱っていた。</p>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div>第1部はここまで。次はXで見つけた記事を読み解いていく。</div>
+  <a class="nextlink" href="part2.html">第2部へ進む →</a>
+
+  <div class="src">
+    <strong>主な出典</strong><br>
+    ・Liu et al., Lost in the Middle: How Language Models Use Long Contexts（2023 / TACL 2024）<br>
+    ・<a href="https://code.claude.com/docs/ja/how-claude-code-works">Claude Code の仕組み — 公式ドキュメント</a><br>
+    ・<a href="https://code.claude.com/docs/ja/settings">設定 — 公式ドキュメント</a><br>
+    ・<a href="https://code.claude.com/docs/ja/memory">メモリ — 公式ドキュメント</a>
+  </div>
+</footer>
+
+</body>
+</html>

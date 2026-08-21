@@ -2,837 +2,232 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Claude Code ハーネス入門 — .claude/ を読み解く</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI学習まとめ — 目次</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#F1F2EC;
-  --paper-2:#E8EAE2;
-  --ink:#17211C;
-  --muted:#5A645D;
-  --rule:#D5D9CF;
-  --guide:#1A4FD6;
-  --gate:#9B1B30;
-  --grid:rgba(23,33,28,.055);
-  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --body:"Noto Sans JP",system-ui,sans-serif;
-  --disp:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;
-  --maxw:760px;
+  --bg:#E7E8EC; --paper:#FCFCFD; --ink:#15171C; --sub:#5C6373;
+  --line:#D2D5DD; --line-soft:#E4E6EB;
+  --accent:#3B45D6; --accent-soft:#E7E8FB;
+  --ochre:#9C6716; --ochre-soft:#F6EEDF;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+  --disp:'Shippori Mincho B1',serif;
+  --body:'Zen Kaku Gothic New',-apple-system,sans-serif;
+  --r:3px;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:24px}
-body{
-  margin:0;background:var(--paper);color:var(--ink);
-  font-family:var(--body);font-size:16px;line-height:1.85;
-  font-feature-settings:"palt" 1;
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:28px 28px;
-}
-::selection{background:var(--guide);color:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);
+  line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:0 28px}
 
-/* ---------- shell ---------- */
-.shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:0;max-width:1180px;margin:0 auto}
-.rail{position:sticky;top:0;align-self:start;height:100vh;padding:34px 18px 34px 22px;border-right:1px solid var(--rule);overflow-y:auto}
-.main{padding:34px 26px 120px;min-width:0}
-.wrap{max-width:var(--maxw)}
+/* ---- シリーズナビ ---- */
+.series{position:sticky;top:0;z-index:20;background:rgba(231,232,236,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.series-in{max-width:760px;margin:0 auto;padding:11px 28px;
+  display:flex;gap:6px;align-items:center;overflow-x:auto}
+.series a{font-family:var(--mono);font-size:11.5px;text-decoration:none;
+  color:var(--sub);padding:4px 10px;border-radius:2px;white-space:nowrap;
+  border:1px solid transparent}
+.series a:hover{color:var(--ink);background:#DDDFE5}
+.series a.on{color:#fff;background:var(--accent)}
+.series .brand{font-family:var(--body);font-size:11.5px;color:#9AA0AD;
+  margin-right:8px;white-space:nowrap}
 
-/* ---------- nav: .claude/ tree ---------- */
-.rail-head{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.tree{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:12.5px;line-height:1.5}
-.tree li{margin:0}
-.tree a{
-  display:block;padding:5px 8px 5px 10px;color:var(--muted);text-decoration:none;
-  border-left:2px solid transparent;transition:color .15s,border-color .15s,background .15s;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.tree a:hover{color:var(--ink);background:var(--paper-2)}
-.tree a.on{color:var(--ink);border-left-color:var(--guide);background:var(--paper-2);font-weight:700}
-.tree .dir{padding:9px 8px 3px 0;color:var(--ink);font-weight:700;font-size:11.5px;letter-spacing:.02em}
-.tree .indent a{padding-left:22px}
-.tree .indent a::before{content:"└ ";color:var(--rule)}
-.rail-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.7}
+/* ---- hero ---- */
+.hero{padding:64px 0 48px}
+.part{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  color:var(--accent);margin-bottom:18px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(32px,6vw,52px);
+  line-height:1.22;margin-bottom:18px}
+.lede{font-size:16px;color:var(--sub);line-height:1.95}
+.meta{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11.5px;color:#9AA0AD}
 
-/* ---------- hero ---------- */
-.hero{padding:52px 0 44px;border-bottom:1px solid var(--rule);margin-bottom:56px}
-.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--guide);margin:0 0 20px}
-h1{
-  font-family:var(--disp);font-weight:900;font-size:clamp(30px,5.4vw,50px);line-height:1.24;
-  letter-spacing:-.015em;margin:0 0 20px;
-}
-h1 em{font-style:normal;color:var(--guide)}
-.lede{font-size:16.5px;color:var(--muted);max-width:600px;margin:0 0 40px}
-
-/* stack diagram */
-.stack{display:flex;flex-direction:column-reverse;gap:5px;max-width:600px;margin:0 0 14px}
-.slab{
-  display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;
-  padding:13px 15px;background:#fff;border:1px solid var(--rule);border-left:3px solid var(--guide);
-  cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%;
-  transition:transform .18s ease,box-shadow .18s ease,border-color .18s;
-  animation:slide .5s cubic-bezier(.2,.8,.3,1) both;
-}
-.slab[data-kind="gate"]{border-left-color:var(--gate)}
-.slab:hover,.slab:focus-visible{transform:translateX(6px);box-shadow:-4px 4px 0 var(--paper-2);outline:none}
-.slab:focus-visible{border-color:var(--ink)}
-.slab .n{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
-.slab .f{font-family:var(--mono);font-size:13px;font-weight:500}
-.slab .r{font-size:12.5px;color:var(--muted);text-align:right;line-height:1.4}
-@keyframes slide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.stack .slab:nth-child(1){animation-delay:.05s}
-.stack .slab:nth-child(2){animation-delay:.13s}
-.stack .slab:nth-child(3){animation-delay:.21s}
-.stack .slab:nth-child(4){animation-delay:.29s}
-.stack .slab:nth-child(5){animation-delay:.37s}
-.stack-note{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em}
-
-/* ---------- sections ---------- */
-section{margin-bottom:78px;scroll-margin-top:24px}
-.sec-tag{
-  display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted);border:1px solid var(--rule);background:#fff;padding:3px 9px;margin-bottom:14px;
-}
-h2{font-family:var(--disp);font-weight:900;font-size:clamp(23px,3.4vw,30px);line-height:1.35;letter-spacing:-.01em;margin:0 0 8px}
-h3{font-family:var(--disp);font-weight:700;font-size:18.5px;line-height:1.5;margin:38px 0 10px;padding-top:14px;border-top:1px solid var(--rule)}
-h4{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.03em;margin:24px 0 6px}
-p{margin:0 0 16px}
+/* ---- 本文 ---- */
+section{padding:44px 0;border-top:1px solid var(--line)}
+.num{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:#9AA0AD;margin-bottom:10px}
+h2{font-family:var(--disp);font-weight:600;font-size:27px;
+  line-height:1.4;margin-bottom:20px}
+h3{font-family:var(--body);font-weight:700;font-size:16.5px;
+  margin:28px 0 10px}
+p{margin-bottom:15px}
+p:last-child{margin-bottom:0}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin-bottom:6px}
+li::marker{color:#A9AEBA}
 strong{font-weight:700}
-.dim{color:var(--muted)}
-code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);padding:1px 5px;border-radius:2px}
+code{font-family:var(--mono);font-size:.88em;background:#EDEEF2;
+  padding:1px 5px;border-radius:3px}
 
-/* callouts */
-.note{border-left:3px solid var(--guide);background:#fff;padding:14px 18px;margin:22px 0;font-size:15px}
-.note.gate{border-left-color:var(--gate)}
-.note .t{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--guide);display:block;margin-bottom:5px}
-.note.gate .t{color:var(--gate)}
-.note p:last-child{margin-bottom:0}
+pre{background:#1B1E25;color:#DCDFE6;font-family:var(--mono);
+  font-size:12.5px;line-height:1.85;padding:18px 20px;border-radius:var(--r);
+  overflow-x:auto;margin:20px 0}
+pre .c{color:#767D8C}
+pre .a{color:#A8B3F5}
 
-/* tables */
-.tw{overflow-x:auto;margin:22px 0;border:1px solid var(--rule);background:#fff}
-table{border-collapse:collapse;width:100%;font-size:14px;min-width:460px}
-th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.7}
-th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);font-weight:500}
+.pull{font-family:var(--disp);font-size:20px;line-height:1.65;
+  color:var(--accent);border-left:3px solid var(--accent);
+  padding:4px 0 4px 20px;margin:26px 0}
+
+.note{border-left:2px solid var(--ochre);background:var(--ochre-soft);
+  padding:14px 18px;margin:22px 0;font-size:13.5px;line-height:1.8}
+.note strong{color:var(--ochre)}
+
+table{width:100%;border-collapse:collapse;background:var(--paper);
+  border:1px solid var(--line);font-size:13.5px;margin:20px 0}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft);
+  vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--sub);font-weight:500;background:#F4F5F7}
 tr:last-child td{border-bottom:none}
-td:first-child{font-weight:700}
+td code{background:transparent;padding:0;color:var(--accent);font-weight:700}
+.tbl{overflow-x:auto}
 
-/* code block */
-pre{
-  font-family:var(--mono);font-size:12.5px;line-height:1.7;background:var(--ink);color:#DDE3DC;
-  padding:16px 18px;overflow-x:auto;margin:20px 0;border-left:3px solid var(--guide);
+/* ---- 3層図 ---- */
+.stack{margin:26px 0;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:var(--paper)}
+.layer{padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.layer:last-child{border-bottom:none}
+.layer .id{font-family:var(--mono);font-size:16px;font-weight:700;
+  color:var(--accent);flex:none;width:24px}
+.layer .nm{font-weight:700;font-size:15px;flex:none;min-width:150px}
+.layer .ds{font-size:13.5px;color:var(--sub);flex:1;min-width:180px}
+.layer.l3{background:var(--accent-soft)}
+
+/* ---- ループ図 ---- */
+.loop{counter-reset:s;margin:22px 0;padding:0;list-style:none}
+.loop li{counter-increment:s;position:relative;padding:9px 0 9px 42px;
+  border-bottom:1px dashed var(--line);font-size:14px;margin:0}
+.loop li:last-child{border-bottom:none}
+.loop li::before{content:counter(s);position:absolute;left:0;top:9px;
+  font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+
+footer{padding:40px 0 60px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--sub)}
+.nextlink{display:inline-block;margin-top:18px;font-family:var(--mono);
+  font-size:12.5px;text-decoration:none;padding:9px 16px;
+  border:1px solid var(--accent);border-radius:var(--r);color:var(--accent)}
+.nextlink:hover{background:var(--accent);color:#fff}
+.src{margin-top:24px;font-size:12.5px;line-height:1.85}
+.src a{color:var(--sub)}
+
+@media (max-width:640px){
+  .wrap{padding:0 20px}
+  .series-in{padding:10px 20px}
+  .hero{padding:44px 0 36px}
+  .pull{font-size:17px}
 }
-pre .c{color:#7E8C82}
-pre .k{color:#8FB8FF}
-pre .s{color:#E8B87A}
-pre code{background:none;padding:0;font-size:inherit;color:inherit}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
-/* lists */
-ul.tick{list-style:none;padding:0;margin:16px 0}
-ul.tick li{position:relative;padding-left:22px;margin-bottom:9px}
-ul.tick li::before{content:"▸";position:absolute;left:2px;color:var(--guide);font-size:13px}
-ul.tick.gate li::before{content:"✕";color:var(--gate);font-size:11px;top:1px}
-ol.steps{counter-reset:s;list-style:none;padding:0;margin:20px 0}
-ol.steps li{counter-increment:s;position:relative;padding-left:38px;margin-bottom:14px}
-ol.steps li::before{
-  content:counter(s,decimal-leading-zero);position:absolute;left:0;top:3px;
-  font-family:var(--mono);font-size:11px;color:#fff;background:var(--ink);padding:2px 6px;letter-spacing:.04em;
-}
-
-/* layer cards */
-.layer{border:1px solid var(--rule);background:#fff;padding:22px 24px;margin:20px 0;border-top:3px solid var(--guide)}
-.layer[data-kind="gate"]{border-top-color:var(--gate)}
-.layer-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:4px}
-.layer-n{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
-.layer-name{font-family:var(--disp);font-weight:900;font-size:20px}
-.chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:2px 7px;border:1px solid var(--guide);color:var(--guide);white-space:nowrap}
-.chip.gate{border-color:var(--gate);color:var(--gate)}
-.layer-path{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
-.layer h4:first-of-type{margin-top:16px}
-.layer p:last-child,.layer ul:last-child{margin-bottom:0}
-
-/* compare */
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
-.cmp>div{border:1px solid var(--rule);background:#fff;padding:18px 20px}
-.cmp h4{margin-top:0}
-.cmp p:last-child{margin-bottom:0}
-
-/* sources */
-.src{list-style:none;padding:0;margin:20px 0}
-.src li{border-bottom:1px solid var(--rule);padding:14px 0}
-.src li:last-child{border-bottom:none}
-.src a{color:var(--ink);text-decoration:none;font-weight:700;border-bottom:1px solid var(--guide)}
-.src a:hover{color:var(--guide)}
-.src .m{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px;word-break:break-all}
-
-footer{border-top:1px solid var(--rule);padding-top:22px;font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8}
-
-/* ---------- responsive ---------- */
-@media (max-width:900px){
-  .shell{grid-template-columns:1fr}
-  .rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--rule);padding:20px}
-  .tree{display:flex;flex-wrap:wrap;gap:4px}
-  .tree .dir{display:none}
-  .tree .indent a{padding-left:9px}
-  .tree .indent a::before{content:""}
-  .tree a{border-left:none;border-bottom:2px solid transparent;padding:5px 9px}
-  .tree a.on{border-left:none;border-bottom-color:var(--guide)}
-  .rail-foot{display:none}
-  .main{padding:26px 20px 90px}
-  .cmp{grid-template-columns:1fr}
-  .slab{grid-template-columns:30px 1fr;gap:8px}
-  .slab .r{grid-column:1/-1;text-align:left;padding-top:2px}
-}
-@media (prefers-reduced-motion:reduce){
-  *{animation:none!important;transition:none!important}
-  html{scroll-behavior:auto}
-}
+/* ---- 目次 ---- */
+.toc{margin:8px 0 0;padding:0;list-style:none;border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;background:var(--paper)}
+.toc li{margin:0;border-bottom:1px solid var(--line-soft)}
+.toc li:last-child{border-bottom:none}
+.toc a,.toc .off{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;
+  padding:20px 22px;text-decoration:none;color:inherit}
+.toc a:hover{background:#F2F3F7}
+.toc .no{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:var(--accent);flex:none;width:52px}
+.toc .bd{flex:1;min-width:220px}
+.toc .ti{font-family:var(--disp);font-weight:600;font-size:19px;
+  line-height:1.45;margin-bottom:5px}
+.toc .ds{font-size:13.5px;color:var(--sub);line-height:1.8}
+.toc .off{opacity:.5}
+.toc .off .no{color:#9AA0AD}
+.toc .tag{font-family:var(--mono);font-size:10.5px;color:#9AA0AD;
+  border:1px solid var(--line);border-radius:2px;padding:2px 7px;
+  margin-left:8px;white-space:nowrap;vertical-align:2px}
+.appendix{margin-top:30px;padding:18px 22px;border:1px dashed var(--line);
+  border-radius:var(--r);font-size:13.5px;line-height:1.85;color:var(--sub)}
 </style>
 </head>
 <body>
 
-<div class="shell">
-
-<nav class="rail" aria-label="目次">
-  <div class="rail-head">contents</div>
-  <ul class="tree">
-    <li><a href="#why">なぜハーネスか</a></li>
-    <li class="dir">.claude/ — 5層</li>
-    <li class="indent"><a href="#l1">CLAUDE.md</a></li>
-    <li class="indent"><a href="#l2">rules/</a></li>
-    <li class="indent"><a href="#l3">skills/</a></li>
-    <li class="indent"><a href="#l4">agents/</a></li>
-    <li class="indent"><a href="#l5">settings.json</a></li>
-    <li class="indent"><a href="#hooks">hooks</a></li>
-    <li class="dir">応用</li>
-    <li class="indent"><a href="#skill-design">スキル設計</a></li>
-    <li class="indent"><a href="#orch">組み合わせ方</a></li>
-    <li class="indent"><a href="#graph">大規模化</a></li>
-    <li class="indent"><a href="#mcp">MCPと認可</a></li>
-    <li class="dir">まとめ</li>
-    <li class="indent"><a href="#start">最初の一歩</a></li>
-    <li class="indent"><a href="#src">出典</a></li>
-  </ul>
-  <div class="rail-foot">
-    自分用の学習メモ<br>更新 2026-08-20
+<nav class="series">
+  <div class="series-in">
+    <span class="brand">AI学習まとめ</span>
+    <a href="index.html" class="on">目次</a>
+    <a href="part1.html">1 Claude Code</a>
+    <a href="part2.html">2 記事&#9312;</a>
+    <a href="part3.html">3 記事&#9313;</a>
+    <a href="part4.html">4 記事&#9314;</a>
   </div>
 </nav>
 
-<main class="main">
-<div class="wrap">
-
-<header class="hero">
-  <p class="eyebrow">Claude Code / harness engineering</p>
-  <h1>プロンプトを磨くより、<br><em>環境</em>を整えるほうが効く。</h1>
-  <p class="lede">Claude Code には、AIの振る舞いを「設定ファイル」として設計する仕組みが5つある。それを層として積み上げるのがハーネスエンジニアリング。このページは、その5層と応用トピックを噛み砕いた自習メモ。</p>
-
-  <div class="stack">
-    <button class="slab" data-kind="gate" data-go="l5">
-      <span class="n">L5</span><span class="f">.claude/settings.json</span><span class="r">安全装置 — 権限を許す／禁じる</span>
-    </button>
-    <button class="slab" data-go="l4">
-      <span class="n">L4</span><span class="f">.claude/agents/*.md</span><span class="r">別コンテキストの専門家</span>
-    </button>
-    <button class="slab" data-go="l3">
-      <span class="n">L3</span><span class="f">.claude/skills/*/SKILL.md</span><span class="r">繰り返す手順を1つにまとめる</span>
-    </button>
-    <button class="slab" data-go="l2">
-      <span class="n">L2</span><span class="f">.claude/rules/*.md</span><span class="r">領域ごとの細かいルール</span>
-    </button>
-    <button class="slab" data-go="l1">
-      <span class="n">L1</span><span class="f">CLAUDE.md</span><span class="r">プロジェクトの憲法</span>
-    </button>
-  </div>
-  <p class="stack-note">↑ 下から積む。下の層ほど「強制力」が強く、上の層ほど「お願い」に近い。</p>
+<header class="hero wrap">
+  <div class="part">CONTENTS</div>
+  <h1>AI学習まとめ</h1>
+  <p class="lede">Claude Code を触りながら学んだことと、その途中で X のタイムラインに流れてきた記事を読んで考えたことの記録。第1部で道具そのものを理解し、第2部以降は「AIが仕事をどう変えるのか」を外からの視点で追いかけていく。</p>
+  <div class="meta">全4部 ／ 2026-08</div>
 </header>
 
-<!-- ============ WHY ============ -->
-<section id="why">
-  <span class="sec-tag">00 / 前提</span>
-  <h2>なぜ「環境側」を整える必要があるのか</h2>
+<main class="wrap">
 
-  <p>ハーネス（harness）は馬具のこと。手綱や鞍を整えて、馬を意図した方向に走らせる、というたとえです。HashiCorp共同創業者の Mitchell Hashimoto が2026年2月に提唱し、OpenAI・Anthropic・Martin Fowler がそれぞれ記事を出したことで一気に広まりました。</p>
+<section id="toc">
+  <div class="num">INDEX</div>
+  <h2>目次</h2>
 
-  <p>核になっている考え方はシンプルです。<strong>エージェントがミスをしたら、そのつど注意するのではなく、二度と同じミスが起きないよう環境側を直す。</strong></p>
-
-  <h3>理由：LLMは毎回「初めまして」だから</h3>
-
-  <p>LLMの正体は、トークン列を受け取って次のトークンの確率分布を返す、状態を持たない関数です。推論のあいだ重みは一切変わらないし、内部に記憶の置き場もありません。会話が続いているように見えるのは、アプリ側が毎回それまでの履歴をまるごとプロンプトに詰め直して送っているからです。</p>
-
-  <p>つまりAIにとっては、プロジェクトのルールも、昨日の失敗も、ディレクトリ構成も、<strong>毎回外から入れ直さないと存在しないのと同じ</strong>。この「入れ直す仕組み」を丸ごと設計するのがハーネスエンジニアリングです。</p>
-
-  <div class="tw">
-  <table>
-    <thead><tr><th>呼び名</th><th>対象</th><th>問い</th></tr></thead>
-    <tbody>
-      <tr><td>プロンプトエンジニアリング</td><td>モデルへの入力テキスト</td><td>何を聞くか</td></tr>
-      <tr><td>コンテキストエンジニアリング</td><td>モデルに渡す情報全体</td><td>何を見せるか</td></tr>
-      <tr><td>ハーネスエンジニアリング</td><td>モデルの外側の実行環境</td><td>どう動かすか</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <p class="dim">後ろほど範囲が広く、コンテキストエンジニアリングはハーネスの一部にあたります。</p>
-
-  <div class="note">
-    <span class="t">ここだけ覚える</span>
-    <p>プロンプトを工夫して直すのは、その場かぎりの対処。設定ファイルに落とすと、次のセッションでも効く。</p>
-  </div>
-</section>
-
-<!-- ============ LAYER 1 ============ -->
-<section id="l1">
-  <span class="sec-tag">01 / .claude の中身</span>
-  <h2>5つの層を一枚ずつ見ていく</h2>
-  <p>Claude Code のハーネスは、次の5つのファイル群でできています。どれか1つだけでも効果はありますが、上から順に足していくと役割がきれいに分かれます。</p>
-
-  <div class="layer">
-    <div class="layer-head">
-      <span class="layer-n">LAYER 1</span>
-      <span class="layer-name">CLAUDE.md</span>
-      <span class="chip">ガイド（お願い）</span>
-    </div>
-    <div class="layer-path">CLAUDE.md（リポジトリのルート）</div>
-
-    <p>Claude Code が最初に読む指示書。プロジェクトの目的、ディレクトリ構成、技術スタック、守ってほしいルールを書きます。<strong>「憲法」であって「百科事典」ではない</strong>、という線引きが大事です。</p>
-
-    <h4>書くとよいこと</h4>
-    <ul class="tick">
-      <li>このリポジトリは何のためにあるか（1〜2行）</li>
-      <li>どのディレクトリに何を置くか</li>
-      <li>技術ルール（例：Pythonは <code>uv run</code> で実行、バージョンは固定）</li>
-      <li>セキュリティルール（例：APIキーを直書きしない、破壊的なgitコマンドは確認を取る）</li>
-    </ul>
-
-    <h4>いちばん効くのは「やらないこと」を書くこと</h4>
-    <p>LLMは放っておくとファイルを整理したり、ドキュメントを足したり、「改善」と称して余計なことをします。<code>やらないこと</code> の節を作って境界線を引いておくだけで、これが目に見えて減ります。</p>
-    <p class="dim">「LLMは否定形が苦手」とよく言われますが、ここでの否定は推論の抑制ではなく<strong>行動範囲の定義</strong>なので別物です。</p>
-
-    <h4>個人設定は import で分ける</h4>
-    <p>CLAUDE.md はgit管理されるので、自分好みの設定を直接書き込むとチームに混ざってしまいます。末尾に1行だけ足す方式が便利です。</p>
-<pre><code><span class="c"># CLAUDE.md の末尾</span>
-@my-preferences.md</code></pre>
-    <p><code>my-preferences.md</code> は <code>.gitignore</code> に入れておく。<strong>参照先のファイルが無い場合は単に無視される</strong>ので、まだ作っていないメンバーにも影響しません。</p>
-
-    <div class="note">
-      <span class="t">読み込みの優先順位</span>
-      <p>組織の管理設定 → <code>~/.claude/CLAUDE.md</code>（ユーザー共通） → 親ディレクトリ → カレントディレクトリ、の順で、<strong>あとに読まれたものが強い</strong>。全プロジェクト共通の個人設定は <code>~/.claude/CLAUDE.md</code> へ。サブディレクトリに置いた CLAUDE.md は、その中のファイルを開いたときに自動で読まれます。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ LAYER 2 ============ -->
-<section id="l2">
-  <div class="layer">
-    <div class="layer-head">
-      <span class="layer-n">LAYER 2</span>
-      <span class="layer-name">Rules</span>
-      <span class="chip">ガイド（お願い）</span>
-    </div>
-    <div class="layer-path">.claude/rules/*.md</div>
-
-    <p><code>.claude/rules/</code> に Markdown を置くと自動で読まれます。CLAUDE.md に全部書くと膨らむルールを、領域ごとに切り出すための層です。</p>
-
-    <h4>常時読むか、必要になったら読むか</h4>
-    <div class="tw">
-    <table>
-      <thead><tr><th>条件</th><th>読み込み</th><th>コンテキスト消費</th></tr></thead>
-      <tbody>
-        <tr><td><code>globs</code> なし</td><td>セッション開始時に常時ロード</td><td>常時</td></tr>
-        <tr><td><code>globs</code> あり</td><td>該当ファイルを読んだ時点で遅延ロード</td><td>条件付き</td></tr>
-      </tbody>
-    </table>
-    </div>
-
-<pre><code><span class="c">---</span>
-<span class="k">description</span>: API層のコーディングルール
-<span class="k">globs</span>: <span class="s">"src/api/**/*.ts"</span>
-<span class="c">---</span>
-<span class="c"># src/api/ 配下のTSを読んだときだけ効く</span></code></pre>
-
-    <p>ルールが増えてきたら <code>globs</code> で条件付きにするのが節約のコツ。</p>
-
-    <div class="note gate">
-      <span class="t">つまずきポイント</span>
-      <p>公式ドキュメントには <code>paths</code> と書かれていますが、YAML配列がうまくパースされない不具合が報告されています。<code>globs</code> は未ドキュメントながら確実に動くため、現時点ではこちらが安全という報告があります（変わる可能性あり、公式の最新を確認）。</p>
-    </div>
-
-    <p class="dim">用途の例：タスク管理のカンバン運用ルール、出力ファイルの命名規則やディレクトリ構成など。「このケースではCSVも出す」「ファイル名は <code>YYYYMMDD_名前.md</code>」といった判断を、毎回言わなくてもやってくれるようになります。</p>
-  </div>
-</section>
-
-<!-- ============ LAYER 3 ============ -->
-<section id="l3">
-  <div class="layer">
-    <div class="layer-head">
-      <span class="layer-n">LAYER 3</span>
-      <span class="layer-name">Skills</span>
-      <span class="chip">ガイド（お願い）</span>
-    </div>
-    <div class="layer-path">.claude/skills/&lt;名前&gt;/SKILL.md</div>
-
-    <p><code>/コマンド名</code> で呼び出せるワークフロー定義。SKILL.md に手順を書いておくだけで、複雑な段取りを一発で走らせられます。<code>description</code> を書いておくと、明示的に呼ばなくても文脈に合えば Claude 側から提案してくれます。</p>
-
-    <h4>設計の勘所：LLMの仕事とスクリプトの仕事を分ける</h4>
-    <p>ある実践例では、最初 RSS の取得・パースまで LLM にやらせていました。取得元が増えるにつれてトークンも時間も膨らむ。RSSのパースは決定的な処理なので、LLMを通す意味がありません。</p>
-
-<pre><code><span class="c"># before — 全部LLM</span>
-LLM → RSS取得 → パース → フィルタ → 翻訳 → まとめ → 保存
-
-<span class="c"># after — 分業</span>
-Python → RSS取得 → パース → JSON出力
-LLM    → 翻訳 → 分類 → まとめ → 保存</code></pre>
-
-    <p>この分業だけで、<strong>トークン消費が約1/6、処理時間が約1/3</strong>になったと報告されています。判断と生成はLLM、ループ・集計・ファイル操作はスクリプト。これが基本線です。</p>
-
-    <div class="note">
-      <span class="t">環境構築をゼロにする書き方</span>
-      <p>スキルからPythonを呼ぶときは <code>uv run --with 'パッケージ==版' python3 script.py</code> のインライン実行が便利。uvさえ入っていれば仮想環境もpip installも要りません。バージョンを固定しておけば、予期しない破壊的変更やサプライチェーン攻撃のリスクも下げられます。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ LAYER 4 ============ -->
-<section id="l4">
-  <div class="layer">
-    <div class="layer-head">
-      <span class="layer-n">LAYER 4</span>
-      <span class="layer-name">Agents</span>
-      <span class="chip">ガイド（お願い）</span>
-    </div>
-    <div class="layer-path">.claude/agents/*.md</div>
-
-    <p><code>@名前</code> で呼ぶ、役割特化のサブエージェント。メインのClaude Codeとは<strong>別のコンテキストで動く</strong>のがポイントです。</p>
-
-    <p>たとえば数百ファイルのメモを横断検索する場合、メインでやるとコンテキストウィンドウが埋まってしまいます。エージェントに任せれば、返ってくるのは<strong>要約だけ</strong>。「〜について何かあったっけ？」のような曖昧な問いを投げる窓口として置いておくと便利です。</p>
-
-    <div class="note">
-      <span class="t">使いどころの判断</span>
-      <p>「大量に読むが、必要なのは結論だけ」なタスクはエージェント向き。逆に、メインの文脈を保ちながら細かくやりとりしたいタスクは向きません。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ LAYER 5 ============ -->
-<section id="l5">
-  <div class="layer" data-kind="gate">
-    <div class="layer-head">
-      <span class="layer-n">LAYER 5</span>
-      <span class="layer-name">Settings</span>
-      <span class="chip gate">ゲート（強制）</span>
-    </div>
-    <div class="layer-path">.claude/settings.json</div>
-
-    <p>ツールの使用権限を制御する層。ここだけは「お願い」ではなく<strong>効く</strong>ので、ハーネスの安全装置にあたります。</p>
-
-<pre><code>{
-  <span class="k">"permissions"</span>: {
-    <span class="k">"allow"</span>: [
-      <span class="s">"Bash(gh issue *)"</span>,
-      <span class="s">"Bash(uv run*python3 .claude/skills/*)"</span>,
-      <span class="s">"WebSearch"</span>, <span class="s">"WebFetch"</span>, <span class="s">"Write"</span>
-    ],
-    <span class="k">"deny"</span>: [
-      <span class="s">"Bash(gh repo delete*)"</span>,
-      <span class="s">"Bash(gh repo archive*)"</span>,
-      <span class="s">"Bash(gh pr close*)"</span>
-    ]
-  }
-}</code></pre>
-
-    <h4>設計の方針</h4>
-    <ul class="tick">
-      <li><strong>allow は業務に必要な範囲で広く。</strong>毎回確認が出ると作業のリズムが崩れます</li>
-      <li><strong>deny は破壊的操作を名指しで。</strong>リポジトリ削除、アーカイブ、PRの強制クローズなど</li>
-      <li>共有したい許可は <code>settings.json</code>、URL固定のcurlなどローカル専用は <code>settings.local.json</code></li>
-    </ul>
-
-    <div class="note gate">
-      <span class="t">パイプの落とし穴</span>
-      <p>パイプ（<code>|</code>）を含むコマンドは各サブコマンドが個別に権限評価されますが、jq式の中の <code>|</code> まで区切りとして誤認されるなど、allowパターンだけでは解決しきれない場合があります。後処理が必要なら、パイプなしで実行してJSON出力をそのままLLMにパースさせるほうが確実です。</p>
-    </div>
-
-    <p class="dim">最初から完璧な権限設定は無理です。「実行してみて確認が出る → 許可を足す」を回して、だんだん快適に寄せていくのが現実的。</p>
-  </div>
-</section>
-
-<!-- ============ HOOKS ============ -->
-<section id="hooks">
-  <div class="layer" data-kind="gate">
-    <div class="layer-head">
-      <span class="layer-n">番外</span>
-      <span class="layer-name">Hooks</span>
-      <span class="chip gate">ゲート（動的）</span>
-    </div>
-    <div class="layer-path">settings.json 内で定義</div>
-
-    <p>イベント駆動の自動処理。CLAUDE.md や Rules が「お願い」なのに対し、Hooks は<strong>決定的に走る</strong>のが違いです。</p>
-
-    <ul class="tick">
-      <li><code>PreToolUse</code> — 破壊的コマンドのブロック、禁止パターンのチェック</li>
-      <li><code>PostToolUse</code> — 書き込み後の自動フォーマット、リント</li>
-      <li><code>UserPromptSubmit</code> — 入力の検証、プロンプトインジェクション検出</li>
-      <li>セッション開始／終了時の処理、タスク完了通知</li>
-    </ul>
-
-    <h4>ただし、急いで入れなくていい</h4>
-    <p>ブロック用途だけなら <code>settings.json</code> の <code>deny</code> で足りるケースが多い。<code>deny</code> は静的なパターンマッチで即座に止めます。Hooks が本当に必要になるのは、パターンでは表せない<strong>動的な判断</strong>——「変更対象ファイルの中身を見て検証する」「外部サービスに問い合わせて判断する」——が要るときです。</p>
-    <p>さらに Hooks の <code>prompt</code> / <code>agent</code> ハンドラはツール実行のたびにLLM呼び出しが走るので、トークンのオーバーヘッドも無視できません。<strong>deny で足りるうちは deny で。</strong></p>
-  </div>
-</section>
-
-<!-- ============ SKILL DESIGN ============ -->
-<section id="skill-design">
-  <span class="sec-tag">02 / 応用</span>
-  <h2>スキルをちゃんと作る</h2>
-  <p>Skills は Anthropic が2025年10月に導入し、同年12月にオープンスタンダードとして公開。2026年3月時点で OpenAI Codex、Gemini CLI、GitHub Copilot など30以上のプラットフォームが採用しています。フォルダ構成は次のとおり。</p>
-
-<pre><code>your-skill-name/
-├── SKILL.md      <span class="c"># 必須 — メインの指示</span>
-├── scripts/      <span class="c"># 任意 — 実行コード</span>
-├── references/   <span class="c"># 任意 — 必要な時だけ読む資料</span>
-└── assets/       <span class="c"># 任意 — テンプレ、フォント等</span></code></pre>
-
-  <h3>設計の核：段階的開示（Progressive Disclosure）</h3>
-  <p>全部を最初から読ませない。3段階の遅延読み込みで、必要な情報だけを必要なときに載せます。</p>
-
-  <div class="tw">
-  <table>
-    <thead><tr><th>層</th><th>中身</th><th>読み込むタイミング</th></tr></thead>
-    <tbody>
-      <tr><td>Level 1</td><td>name + description（約100トークン）</td><td>常にシステムプロンプトへ</td></tr>
-      <tr><td>Level 2</td><td>SKILL.md 本文（5,000トークン未満推奨）</td><td>スキルが起動したとき</td></tr>
-      <tr><td>Level 3</td><td>scripts / references / assets</td><td>参照されたときだけ</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <p>Anthropic はこの設計を「コンテキストウィンドウは公共財」と表現しています。自分のスキルは、他のスキルやシステムプロンプトと同じ場所を分け合っている、という感覚です。</p>
-
-  <div class="note">
-    <span class="t">MCPとの違い</span>
-    <p>MCPが「手足」（ツール・接続）を、Skillsが「頭の中の知識」（手順・作法）を担います。公式ガイドのたとえでは、MCPが厨房の設備で、Skillsがレシピ。</p>
-  </div>
-
-  <h3>Anthropic公式の skill-creator から学べること</h3>
-  <p>skill-creator は「スキルを作るためのスキル」。作成→テスト→レビュー→改善のサイクルを回してくれる、いわばスキルのCI/CDです。構造そのものが設計パターンの見本になっています。</p>
-
-  <h4>① SKILL.md は指揮者に徹する</h4>
-  <p>約480行の SKILL.md は、実は自分では専門処理をしません。採点は <code>agents/grader.md</code>、A/B比較は <code>agents/comparator.md</code>、分析は <code>agents/analyzer.md</code> に投げるだけ。全部1ファイルに書けば1000行を超えますが、分けておけば<strong>評価フェーズでは採点役の指示だけがコンテキストに載る</strong>。段階的開示をスキルの内部設計にまで持ち込んでいる形です。</p>
-
-  <h4>② 決定的な処理はスクリプトへ追い出す</h4>
-  <p>公式のベストプラクティスも、コードは決定的だが言語の解釈はそうではない、という趣旨を述べています。並列実行、多段の集計、ZIPパッケージング——このあたりはLLMの苦手分野なのでスクリプトの担当。</p>
-
-  <h4>③ スキーマ契約を先に決める</h4>
-  <p>LLMの出力はフォーマットがブレます。skill-creator は7種類のJSONスキーマを <code>references/schemas.md</code> に定義し、SKILL.md からは「このスキーマに従え」と参照するだけにしています。<strong>フィールド名を1つ間違えるとビューアが空表示になる</strong>、という注意書きまで明記されている。LLMとスクリプトを繋ぐなら、この契約書は必須です。</p>
-
-  <h4>④ 「なぜ」を書く（Why-driven）</h4>
-  <p>ALWAYS / NEVER を大文字で並べたくなったら黄信号、というのが skill-creator の立場。代わりに理由を説明すると、未知のケースにも対応できるようになります。</p>
-  <div class="tw">
-  <table>
-    <thead><tr><th>従来型</th><th>推奨</th></tr></thead>
-    <tbody>
-      <tr><td>送信前に必ず検証すること</td><td>検証しておくとAPIエラーを防げる。エラーはトークンを無駄にし、ユーザーを困らせる</td></tr>
-      <tr><td>フォーマット手順を飛ばすな</td><td>形式を揃えておかないと、ビューアが結果を読めなくなる</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p class="dim">ただし本当に危険な箇所——スキーマのフィールド名一致、セキュリティ——は明示的な禁止で書く。<strong>両側が崖の細い橋では厳格に、開けた野原では理由で。</strong></p>
-
-  <h4>⑤ description がすべての生命線</h4>
-  <p>常時システムプロンプトに載るのは name と description だけ。本文はトリガー後に初めて読まれます。つまり <strong>description が悪ければ、そのスキルは永遠に呼ばれない</strong>。skill-creator は description の最適化だけのために専用スクリプトを3つ用意し、train/test分割と過学習防止まで組み込んでいます。</p>
-  <p>現状のClaudeはスキルを使わなすぎる傾向がある、と skill-creator 自身が指摘しており、descriptionは少し「押し強め」に書くことが推奨されています。「ダッシュボードの作り方」だけでなく、「ダッシュボード、データ可視化、社内指標などの話が出たら必ずこのスキルを使うこと」のように、<strong>起動すべき文脈を列挙する</strong>書き方です。</p>
-
-  <h4>⑥ 人のレビューはチャットの外へ出す</h4>
-  <p>skill-creator はローカルHTMLのダッシュボードを生成して、ブラウザ上でフィードバックを集めます。大量のテスト結果や複数バージョンの見比べは、テキストチャットでは限界があるからです。集めた意見は構造化ファイルに落として、次の反復に反映する。</p>
-
-  <h4>⑦ 環境ごとのフォールバックを書いておく</h4>
-  <p>サブエージェントの並列実行やブラウザビューアが使えない環境もあります。skill-creator は環境別に「使えない機能→代替手段」を明記しています。大事なのは、<strong>コアの流れ（作る→試す→見る→直す）は環境が変わっても同じ</strong>で、変わるのは各ステップの実行方法だけ、という設計です。</p>
-</section>
-
-<!-- ============ ORCHESTRATION ============ -->
-<section id="orch">
-  <span class="sec-tag">03 / 応用</span>
-  <h2>複数の処理をどうまとめるか</h2>
-  <p>スキルが増えてくると、次は「組み合わせ方」の問題になります。大きく2つの型があります。</p>
-
-  <div class="cmp">
-    <div>
-      <h4>Sub-agent型</h4>
-      <p>1つの親スキルが、複数のサブエージェントを生成して並列に走らせる。skill-creator がこれ。</p>
-      <p class="dim">同じ対象を、複数の視点から同時に評価したいときに向く。</p>
-    </div>
-    <div>
-      <h4>Skill Chain型</h4>
-      <p>独立したスキルを数珠つなぎにしてパイプラインを組む。各スキルが自分の SKILL.md / scripts / references を持ち、単体でも使える。</p>
-      <p class="dim">処理に明確な順番があり、フェーズごとに責務が違うときに向く。</p>
-    </div>
-  </div>
-
-<pre><code><span class="c"># Skill Chain型の例（MLベンチマーク）</span>
-agentic-bench
-  ↓
-model-researcher   <span class="c"># 調査・VRAM推定</span>
-  ↓
-gpu-runner         <span class="c"># 推論実行</span>
-  ↓
-eval-reporter      <span class="c"># レポート生成</span></code></pre>
-
-  <div class="tw">
-  <table>
-    <thead><tr><th>設計軸</th><th>Sub-agent型</th><th>Skill Chain型</th></tr></thead>
-    <tbody>
-      <tr><td>実行モデル</td><td>1スキル内でサブエージェント生成</td><td>独立スキルの直列連結</td></tr>
-      <tr><td>コンテキスト</td><td>親の文脈を継承</td><td>各スキルが自分の領域だけ持つ</td></tr>
-      <tr><td>処理フロー</td><td>並列</td><td>直列（順序のあるフェーズ）</td></tr>
-      <tr><td>単体利用</td><td>サブエージェントは単体では使えない</td><td>各スキルが独立して使える</td></tr>
-      <tr><td>references/</td><td>スキーマ定義（契約書）</td><td>ドメイン知識（先輩のカンペ）</td></tr>
-      <tr><td>スクリプト</td><td>必須コンポーネント</td><td>あれば便利なオプション</td></tr>
-      <tr><td>拡張の仕方</td><td>agents/ や scripts/ を足す</td><td>references/ を1ファイル足す</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <p><strong>この2つは排他的ではありません。</strong>Skill Chain の各フェーズの中で Sub-agent を並列に生成する、といった融合も普通にありえます。また「Sub-agent型だから対話的、Chain型だから自律的」でもない。人の関与をどこに挟むかは、アーキテクチャとは独立した判断です。</p>
-
-  <h3>スクリプトを必須にするか、オプションにするか</h3>
-  <p>判断基準は一つ。<strong>「LLMがゼロからできるか？」</strong></p>
-  <ul class="tick">
-    <li>統計計算・並列処理・ファイル操作 → <strong>必須スクリプト</strong>（LLMには任せられない）</li>
-    <li>情報取得・フォーマット変換 → <strong>オプション</strong>（失敗してもLLMが自力で調べられる）</li>
-  </ul>
-
-  <h3>結局これは Agent Orchestration の話</h3>
-  <p>ここまでのパターンは、Anthropic が2024年12月に整理したエージェント構成パターンとそのまま対応します。</p>
-  <div class="tw">
-  <table>
-    <thead><tr><th>パターン</th><th>中身</th><th>スキルでの対応</th></tr></thead>
-    <tbody>
-      <tr><td>Prompt Chaining</td><td>固定ステップの直列実行</td><td>Skill Chain型</td></tr>
-      <tr><td>Routing</td><td>入力を分類して振り分け</td><td>description によるスキル選択そのもの</td></tr>
-      <tr><td>Parallelization</td><td>同時実行して集約</td><td>Sub-agent の並列生成</td></tr>
-      <tr><td>Orchestrator-Workers</td><td>中央が動的に分解して委譲</td><td>SKILL.md からサブエージェントへ</td></tr>
-      <tr><td>Evaluator-Optimizer</td><td>生成と評価の反復</td><td>skill-creator の改善ループ</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p class="dim">スキルのファイル構造（SKILL.md / agents / scripts / references）は、これらのパターンを実装するための入れ物にすぎない、という見方ができます。</p>
-
-  <div class="note gate">
-    <span class="t">未解決の課題</span>
-    <p>スキル同士は Claude の注意（attention）を奪い合います。あるスキルの description を「押し強め」に最適化した結果、隣のスキルが呼ばれなくなる——ということは起こりえますが、それを検知する仕組みは今のところありません。個別最適だけでなく、<strong>スキル群全体の最適化</strong>が次の論点です。</p>
-  </div>
-</section>
-
-<!-- ============ GRAPH ============ -->
-<section id="graph">
-  <span class="sec-tag">04 / 応用</span>
-  <h2>もっと大きく組むとき（Graph Engineering）</h2>
-
-  <p>エージェントに長い仕事を任せると、判断も状態も副作用も1つのループに集中して、途中再開も監査も難しくなります。そこで出てきたのが Graph Engineering という言い方です。2026年7月ごろから広まりました。</p>
-
-  <h3>要するに何をするのか</h3>
-  <p><strong>ループを捨てるのではなく、ループを「ノードの中」に閉じ込める。</strong>そして、ノードとノードの間を明示的な線でつなぐ。線には、通過条件・受け渡す状態・許される副作用・失敗時の扱いを持たせます。</p>
-
-  <ul class="tick">
-    <li><strong>ノード</strong> = 実行単位（LLMエージェント、普通の関数、評価器、そして<em>人間の承認</em>も同列に置ける）</li>
-    <li><strong>エッジ</strong> = 単なる矢印ではなく契約。入出力の型、遷移条件、許可される副作用を含む</li>
-    <li><strong>状態</strong> = 会話ログとは切り離した、スキーマ付きのデータ。途中保存（checkpoint）できる</li>
-  </ul>
-
-  <p>こう組むと、独立した枝を並列に走らせる、途中で止めて人の承認を待つ、落ちても保存点から再開する、予算（トークン・時間・お金）を超えたら明示的な終了状態へ遷移する、といったことが設計として扱えるようになります。</p>
-
-  <h3>ただし、飛びつく前に</h3>
-  <p>この分野の一次資料は position paper（設計提案）が中心で、実装と実験結果が伴っていないものもあります。批判側の指摘も筋が通っています——ステートマシン、DAGスケジューラ、ワークフローエンジン、分散トレーシングは何十年も使われてきた技術で、<strong>graph という呼称は既存技術の言い換えでもある</strong>、と。</p>
-
-  <div class="note gate">
-    <span class="t">誤解しやすいところ</span>
-    <p><strong>「グラフ化すれば信頼性が上がる」わけではない。</strong>誤った計画から誤った依存関係が作られると、明示グラフはその誤りを再現可能に、整然と実行します。複数エージェントは同じ誤情報にきれいに合意することもできる。テスト、外部の実測、人の判断といった<strong>グラフの外側の証拠</strong>を必ず置くこと。</p>
-    <p><strong>「枝を増やせば速くなる」わけでもない。</strong>並列化はトークン、ツール呼び出し、レート制限、合流待ちを増やします。Anthropic の事例報告では、マルチエージェント構成は通常のチャットの約15倍のトークンを使いました（同社の特定構成での観測値であり、一般的な倍率ではありません）。</p>
-  </div>
-
-  <h3>単純な方式から順に検討する</h3>
-  <p>複雑さは足していくもの。次の順で、必要になった段階だけ上げていきます。</p>
-  <ol class="steps">
-    <li><strong>単一のプロンプト</strong> — 1回で終わり、副作用がなく、失敗しても安い</li>
-    <li><strong>単一のエージェントループ</strong> — 手順が探索中に変わり、次の行動を事前に列挙できない</li>
-    <li><strong>決定的なワークフロー</strong> — 手順と分岐が既知で、各ステップを機械的に検証できる</li>
-    <li><strong>明示グラフ</strong> — 独立した枝、明示的な合流、人の承認ゲートがあり、経路自体を監査したい</li>
-  </ol>
-
-  <p>「エージェントが複数いる」ことだけを graph 採用の理由にしない、というのが要点です。次の問いに「はい」が少ないなら、まだ単純な方式で足ります。</p>
-  <ul class="tick">
-    <li>独立して走らせられる枝が複数ある？</li>
-    <li>エージェント・関数・人の承認を、同じ実行の中で連携させる？</li>
-    <li>数分を超える待ちや、プロセス再起動、後日の再開がある？</li>
-    <li>支払い・削除・公開のように、権限の重さが違う副作用がある？</li>
-    <li>途中の成果物と経路を、後から監査・再評価する必要がある？</li>
-  </ul>
-
-  <div class="note">
-    <span class="t">Claude Code に引き寄せると</span>
-    <p>ハーネスの5層は、この文脈でいう<strong>「ノードを安全に動かすための土台」</strong>にあたります。CLAUDE.md と Rules がノード内部の判断材料、Skills がノードの中身、Agents がコンテキストの分離、Settings が権限ゲート。グラフを組む前に、まずこの土台を整えるほうが先です。</p>
-  </div>
-</section>
-
-<!-- ============ MCP ============ -->
-<section id="mcp">
-  <span class="sec-tag">05 / 応用</span>
-  <h2>外部サービスと繋ぐときの「認可疲れ」</h2>
-
-  <p>GitHub、Slack、Notion、社内システム。エージェントに仕事を任せるなら連携させたくなりますが、そのたびに認可を求められる。「任せたと思ったら認可待ちで止まっていた」が起きます。</p>
-
-  <h3>連携は3ステップに分解できる</h3>
-  <ol class="steps">
-    <li><strong>認証</strong> — 本人であることを社内IdPなどで証明する</li>
-    <li><strong>認可の取得</strong> — ツール（MCP）を使う許可をユーザーに求める ← <span style="color:var(--gate)">ここが詰まる</span></li>
-    <li><strong>実行</strong> — ユーザーの代理としてツールを叩く</li>
-  </ol>
-
-  <p>ステップ2の依頼が飛ぶのはツールを実行する瞬間なので、いつ来るか読めません。素朴な希望はこうです——<strong>SSOのように、最初の1回の認証で済ませられないか。</strong></p>
-
-  <h3>ブラウザが無い、という壁</h3>
-  <p>SSOが成立するのは、IdP側にログイン済みセッションがあり、ブラウザがCookieでそれを持ち回れるから。ところが<strong>エージェントはブラウザを持っていない</strong>ので、Cookieが使えません。手元にあるのは、認証の結果もらった <code>id_token</code> だけです。</p>
-
-  <p>しかも <code>id_token</code> は宛先（<code>aud</code>）がサービスごとに違い、自分宛でないトークンは受け取りを拒否するよう仕様で定められています。じゃあ無理か、というところで出てくるのが <strong>OBO（On-Behalf-Of）</strong>です。</p>
-
-  <h3>OBO＝トークンの交換</h3>
-  <p>手元の <code>id_token</code> を、外部サービスの認可サーバーに直接POSTして、そのサービス宛の <code>access_token</code> と<strong>交換</strong>してもらう。RFC 8693 で定義されたトークン交換のうち、「ユーザーの代理として認可を受ける」使い方をOBOと呼びます。</p>
-
-  <div class="tw">
-  <table>
-    <thead><tr><th></th><th>SSO（Cookie持ち越し）</th><th>OBO（トークン交換）</th></tr></thead>
-    <tbody>
-      <tr><td>提示するもの</td><td>セッションCookie</td><td><code>id_token</code></td></tr>
-      <tr><td>提示先</td><td>IdPの <code>/authorize</code></td><td>外部サービスの認可サーバーの <code>/token</code></td></tr>
-      <tr><td>経路</td><td>ブラウザのリダイレクト往復</td><td>直接POST 1往復（リダイレクトなし）</td></tr>
-      <tr><td>ユーザーの関与</td><td>なし（画面が出ない）</td><td>なし</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <p class="dim">類似の方式に ID-JAG があります。IdPを一度経由する分、「どのエージェントがどの外部サービスに繋いでよいか」を会社全体で一元管理できるのが利点。ただし執筆時点ではIETF Draftで、IdP側の対応も必要です。</p>
-
-  <h3>いちばん大事な設計：権限は絞られて出る</h3>
-  <p>エージェント側のコードは1本で、要求するスコープも全員同じでかまいません。<strong>認可サーバー側で、そのユーザーが実際に持っている権限との「積」を取る</strong>のがポイントです。</p>
-
-  <p>営業担当のユーザーが発注ツールを叩こうとしても、交換後のトークンにその権限は入っていないので弾かれる。画面からログインしたときと同じ権限が、そのままエージェント経由にも適用される、という状態になります。</p>
-
-  <div class="tw">
-  <table>
-    <thead><tr><th>リスク</th><th>中身</th><th>対策</th></tr></thead>
-    <tbody>
-      <tr><td>なりすまし</td><td>盗んだ正規トークンを持ち込む</td><td>クライアント認証で未登録・不一致を拒否</td></tr>
-      <tr><td>検証すり抜け</td><td>偽造・期限切れ・別クライアント宛のトークン</td><td>署名 / <code>iss</code> / <code>exp</code> を検証し、<code>aud</code> は事前登録と照合</td></tr>
-      <tr><td>権限昇格</td><td>要求されたスコープをそのまま返す</td><td>保有権限との積を取り、狭めたら応答で明示</td></tr>
-      <tr><td>宛先の鵜呑み</td><td>要求された宛先をそのまま入れる</td><td><code>aud</code> はリソースサーバーに固定</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <h3>ログに残すもの、絶対に残さないもの</h3>
-  <p>監視すべきは3点。<strong>本人（誰の権限で）・代理人（どのエージェントが）・権限（何を許したか／何が足りなかったか）。</strong>これを認可サーバー側とMCPサーバー側の2箇所で記録します。</p>
-
-  <p>ただしJWTのクレーム名をそのまま使うのは避けます。同じ <code>sub</code> でも発行者が変われば値が変わるし、<code>aud</code> は交換の前後で宛先が移動するからです。「意味を固定した自前のフィールド名」に写し替えて記録すると、一貫して追跡できます。</p>
-
-  <div class="note gate">
-    <span class="t">残してはいけないもの</span>
-    <p>生のトークンと <code>Authorization</code> ヘッダ。ログに残ったトークンは、有効期限のあいだそのまま資格情報として使えてしまいます。出力の直前にレコードを走査して、JWTらしき文字列や <code>client_secret</code> が混ざっていたら出力自体を止める、という実装例もあります。</p>
-  </div>
-</section>
-
-<!-- ============ START ============ -->
-<section id="start">
-  <span class="sec-tag">06 / まとめ</span>
-  <h2>最初の一歩、この順で</h2>
-
-  <p>全部を一度に整える必要はありません。小さく始めて、実際に起きた失敗を見てから足していくのが正攻法です。</p>
-
-  <ol class="steps">
-    <li><strong>CLAUDE.md に「やらないこと」を3行書く。</strong>いちばん費用対効果が高い一手</li>
-    <li><strong>settings.json の deny に破壊的コマンドを並べる。</strong>allow は使いながら足していく</li>
-    <li><strong>2回以上やった手順を Skill にする。</strong>その際、決定的な処理はスクリプトへ</li>
-    <li><strong>CLAUDE.md が膨らんできたら Rules に切り出す。</strong>常時要らないものは <code>globs</code> で条件付きに</li>
-    <li><strong>大量に読むタスクが出てきたら Agent に委譲する。</strong>返すのは要約だけ</li>
-    <li><strong>deny で表せない動的な判断が要るときだけ Hooks。</strong>それまでは不要</li>
-  </ol>
-
-  <h3>迷ったときの3つの問い</h3>
-  <ul class="tick">
-    <li><strong>これはLLMがゼロからできるか？</strong> → できないならスクリプトへ</li>
-    <li><strong>これは「お願い」で足りるか、「強制」が要るか？</strong> → 取り返しがつかないなら deny か Hooks</li>
-    <li><strong>この複雑さは、単純な方式より本当に良い結果を出しているか？</strong> → 測ってから足す</li>
-  </ul>
-
-  <div class="note">
-    <span class="t">通底している一つのこと</span>
-    <p>5層も、スキル設計も、グラフも、認可も、言っていることは同じです。<strong>その場のプロンプトで直すのをやめて、次も効く場所に書く。</strong>そしてAIに任せる範囲と、機械が決定的に守る範囲の境界を、自分の手で引くこと。</p>
-  </div>
-</section>
-
-<!-- ============ SOURCES ============ -->
-<section id="src">
-  <span class="sec-tag">07 / 出典</span>
-  <h2>参考にした記事</h2>
-  <p>このページは以下4本を自分なりに噛み砕いて再構成したものです。正確な記述と実装コードは原典を参照してください。</p>
-
-  <ul class="src">
+  <ul class="toc">
     <li>
-      <a href="https://zenn.dev/sasadango28/articles/claude-code-harness-engineering-20260415" target="_blank" rel="noopener">Claude Codeでハーネスエンジニアリングを実践する — 5層の設計パターン</a>
-      <span class="m">28 / Zenn — 5層の骨格、CLAUDE.md・Rules・Skills・Agents・Settings・Hooks の実践</span>
+      <a href="part1.html">
+        <div class="no">PART 1</div>
+        <div class="bd">
+          <div class="ti">Claude Code とは何か</div>
+          <div class="ds">コードを書く道具ではなく、AIに手足と権限をつけてループを回す仕組み。agentic ループの6段階、三層構造、そして設定ファイルが必要になる理由まで。</div>
+        </div>
+      </a>
     </li>
     <li>
-      <a href="https://nyosegawa.com/posts/skill-creator-and-orchestration-skill/" target="_blank" rel="noopener">skill-creatorから学ぶSkill設計と、Orchestration Skillの作り方</a>
-      <span class="m">逆瀬川ちゃん — 段階的開示、スキーマ契約、Sub-agent型とSkill Chain型の比較</span>
+      <a href="part2.html">
+        <div class="no">PART 2</div>
+        <div class="bd">
+          <div class="ti">AI失業論はウソ？<span class="tag">記事&#9312;</span></div>
+          <div class="ds">マイクロソフト・アマゾンの大量リストラは本当にAIのせいなのか。完全失業率の推移が示す意外な現実と、そこから考えた「仕事の変化」について。</div>
+        </div>
+      </a>
     </li>
     <li>
-      <a href="https://zenn.dev/suwash/articles/graph-engineering_20260727" target="_blank" rel="noopener">Graph Engineering入門：AIエージェントのループを明示グラフへ変える</a>
-      <span class="m">suwa-sh / 諏訪真一 / Zenn — ノード・エッジ・状態、採用判断、反証と限界</span>
+      <a href="part3.html">
+        <div class="no">PART 3</div>
+        <div class="bd">
+          <div class="ti">AI検索と、&quot;不安定さ&quot;を売る商売<span class="tag">記事&#9313;</span></div>
+          <div class="ds">AIが引用先を選ぶ基準が変わると、昨日まで引用されていたサイトが翌日には消える。サイトが「店」から「食材の卸業者」になる時代に、何が商売になるのか。</div>
+        </div>
+      </a>
     </li>
     <li>
-      <a href="https://zenn.dev/aws_japan/articles/2b62886aa8735e" target="_blank" rel="noopener">AI エージェントの「認可疲れ」に効く処方箋 : 理論から実装まで</a>
-      <span class="m">icoxfog417 / AWS Japan / Zenn — OBOによるトークン交換、権限の絞り込み、監視設計</span>
+      <a href="part4.html">
+        <div class="no">PART 4</div>
+        <div class="bd">
+          <div class="ti">AIの「安さ」が終わるとき<span class="tag">記事&#9314;</span></div>
+          <div class="ds">DeepSeek の API 料金値上げから考える、AIのコストの話。そして、値段の話がなぜ「勉強する意味」の話に繋がるのか。</div>
+        </div>
+      </a>
     </li>
   </ul>
 
-  <footer>
-    Claude Code ハーネス入門 — 自分用の学習メモ<br>
-    記載内容は各記事の執筆時点の情報にもとづきます。仕様・不具合の状況は変わるため、公式ドキュメントもあわせて確認してください。
-  </footer>
+  <div class="appendix">
+    <strong>付録</strong>：<a href="harness.html">Claude Code ハーネス入門 — .claude/ を読み解く</a><br>
+    第1部を書く前にまとめた、設定ファイル群の詳細版。CLAUDE.md から settings.json までの5層と、スキル設計・サブエージェント・外部連携までを一枚にまとめてある。
+  </div>
 </section>
 
-</div>
 </main>
-</div>
 
-<script>
-(function(){
-  // hero stack → jump to layer
-  document.querySelectorAll('.slab').forEach(function(b){
-    b.addEventListener('click', function(){
-      var el = document.getElementById(b.dataset.go);
-      if(el) el.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
-    });
-  });
+<footer class="wrap">
+  <div>読む順番は第1部からを想定しているが、第2部以降は単体でも読める。</div>
+  <a class="nextlink" href="part1.html">第1部から読む &rarr;</a>
+</footer>
 
-  // scroll spy
-  var links = Array.prototype.slice.call(document.querySelectorAll('.tree a'));
-  var map = {};
-  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
-  var sections = Object.keys(map).map(function(id){ return document.getElementById(id); }).filter(Boolean);
-
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if(e.isIntersecting){
-        links.forEach(function(a){ a.classList.remove('on'); });
-        var a = map[e.target.id];
-        if(a) a.classList.add('on');
-      }
-    });
-  }, {rootMargin:'-10% 0px -70% 0px', threshold:0});
-
-  sections.forEach(function(s){ io.observe(s); });
-})();
-</script>
 </body>
 </html>

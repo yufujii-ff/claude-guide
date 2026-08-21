@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第3部 AI検索と「不安定さ」を売る商売 — AI学習まとめ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E7E8EC; --paper:#FCFCFD; --ink:#15171C; --sub:#5C6373;
+  --line:#D2D5DD; --line-soft:#E4E6EB;
+  --accent:#3B45D6; --accent-soft:#E7E8FB;
+  --ochre:#9C6716; --ochre-soft:#F6EEDF;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+  --disp:'Shippori Mincho B1',serif;
+  --body:'Zen Kaku Gothic New',-apple-system,sans-serif;
+  --r:3px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);
+  line-height:1.9;font-size:15px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:0 28px}
+
+/* ---- シリーズナビ ---- */
+.series{position:sticky;top:0;z-index:20;background:rgba(231,232,236,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.series-in{max-width:760px;margin:0 auto;padding:11px 28px;
+  display:flex;gap:6px;align-items:center;overflow-x:auto}
+.series a{font-family:var(--mono);font-size:11.5px;text-decoration:none;
+  color:var(--sub);padding:4px 10px;border-radius:2px;white-space:nowrap;
+  border:1px solid transparent}
+.series a:hover{color:var(--ink);background:#DDDFE5}
+.series a.on{color:#fff;background:var(--accent)}
+.series .brand{font-family:var(--body);font-size:11.5px;color:#9AA0AD;
+  margin-right:8px;white-space:nowrap}
+
+/* ---- hero ---- */
+.hero{padding:64px 0 48px}
+.part{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  color:var(--accent);margin-bottom:18px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(32px,6vw,52px);
+  line-height:1.22;margin-bottom:18px}
+.lede{font-size:16px;color:var(--sub);line-height:1.95}
+.meta{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11.5px;color:#9AA0AD}
+
+/* ---- 本文 ---- */
+section{padding:44px 0;border-top:1px solid var(--line)}
+.num{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:#9AA0AD;margin-bottom:10px}
+h2{font-family:var(--disp);font-weight:600;font-size:27px;
+  line-height:1.4;margin-bottom:20px}
+h3{font-family:var(--body);font-weight:700;font-size:16.5px;
+  margin:28px 0 10px}
+p{margin-bottom:15px}
+p:last-child{margin-bottom:0}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin-bottom:6px}
+li::marker{color:#A9AEBA}
+strong{font-weight:700}
+code{font-family:var(--mono);font-size:.88em;background:#EDEEF2;
+  padding:1px 5px;border-radius:3px}
+
+pre{background:#1B1E25;color:#DCDFE6;font-family:var(--mono);
+  font-size:12.5px;line-height:1.85;padding:18px 20px;border-radius:var(--r);
+  overflow-x:auto;margin:20px 0}
+pre .c{color:#767D8C}
+pre .a{color:#A8B3F5}
+
+.pull{font-family:var(--disp);font-size:20px;line-height:1.65;
+  color:var(--accent);border-left:3px solid var(--accent);
+  padding:4px 0 4px 20px;margin:26px 0}
+
+.note{border-left:2px solid var(--ochre);background:var(--ochre-soft);
+  padding:14px 18px;margin:22px 0;font-size:13.5px;line-height:1.8}
+.note strong{color:var(--ochre)}
+
+table{width:100%;border-collapse:collapse;background:var(--paper);
+  border:1px solid var(--line);font-size:13.5px;margin:20px 0}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft);
+  vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--sub);font-weight:500;background:#F4F5F7}
+tr:last-child td{border-bottom:none}
+td code{background:transparent;padding:0;color:var(--accent);font-weight:700}
+.tbl{overflow-x:auto}
+
+/* ---- 3層図 ---- */
+.stack{margin:26px 0;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:var(--paper)}
+.layer{padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.layer:last-child{border-bottom:none}
+.layer .id{font-family:var(--mono);font-size:16px;font-weight:700;
+  color:var(--accent);flex:none;width:24px}
+.layer .nm{font-weight:700;font-size:15px;flex:none;min-width:150px}
+.layer .ds{font-size:13.5px;color:var(--sub);flex:1;min-width:180px}
+.layer.l3{background:var(--accent-soft)}
+
+/* ---- ループ図 ---- */
+.loop{counter-reset:s;margin:22px 0;padding:0;list-style:none}
+.loop li{counter-increment:s;position:relative;padding:9px 0 9px 42px;
+  border-bottom:1px dashed var(--line);font-size:14px;margin:0}
+.loop li:last-child{border-bottom:none}
+.loop li::before{content:counter(s);position:absolute;left:0;top:9px;
+  font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+
+footer{padding:40px 0 60px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--sub)}
+.nextlink{display:inline-block;margin-top:18px;font-family:var(--mono);
+  font-size:12.5px;text-decoration:none;padding:9px 16px;
+  border:1px solid var(--accent);border-radius:var(--r);color:var(--accent)}
+.nextlink:hover{background:var(--accent);color:#fff}
+.src{margin-top:24px;font-size:12.5px;line-height:1.85}
+.src a{color:var(--sub)}
+
+@media (max-width:640px){
+  .wrap{padding:0 20px}
+  .series-in{padding:10px 20px}
+  .hero{padding:44px 0 36px}
+  .pull{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---- 引用カード ---- */
+.quote-card{margin:24px 0;padding:20px 22px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--paper)}
+.quote-card .who{font-family:var(--mono);font-size:11.5px;color:#9AA0AD;
+  margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+.quote-card p{font-size:14.5px;margin-bottom:12px}
+.quote-card p:last-child{margin-bottom:0}
+.biz{margin:22px 0;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:var(--paper)}
+.biz-row{padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+.biz-row:last-child{border-bottom:none}
+.biz-nm{font-weight:700;font-size:15px;margin-bottom:4px}
+.biz-co{font-family:var(--mono);font-size:11.5px;color:var(--accent);
+  margin-bottom:6px}
+.biz-ds{font-size:13.5px;color:var(--sub);line-height:1.8}
+</style>
+</head>
+<body>
+
+<nav class="series">
+  <div class="series-in">
+    <span class="brand">AI学習まとめ</span>
+    <a href="index.html">目次</a>
+    <a href="part1.html">1 Claude Code</a>
+    <a href="part2.html">2 記事&#9312;</a>
+    <a href="part3.html" class="on">3 記事&#9313;</a>
+    <a href="part4.html">4 記事&#9314;</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="part">PART 3 / 4</div>
+  <h1>AI検索と、<br>&quot;不安定さ&quot;を売る商売</h1>
+  <p class="lede">Xで見かけた長文の投稿。AI検索が引用先をどう選ぶかが変わると、昨日まで大量に引用されていたサイトが翌日には消える——という話から、そこに生まれるビジネスの分析まで。第2部が「AIと雇用」の話だったのに対して、こちらは「AIと情報の流通」の話だった。</p>
+  <div class="meta">学習まとめ 第3部 ／ 2026-08</div>
+</header>
+
+<main class="wrap">
+
+<section id="s1">
+  <div class="num">01</div>
+  <h2>読んだ投稿</h2>
+  <p>X の <a href="https://x.com/saasmeshi/status/2090256591836889118">@saasmeshi</a> による長文投稿。生成AIが情報を引用する仕組みの変化を起点に、そこで成立するビジネスを3つ挙げている。</p>
+
+  <div class="note">
+    以下は投稿の要約であり、逐語の引用ではない。数値や固有名詞を含む正確な記述は元の投稿を参照のこと。
+  </div>
+</section>
+
+<section id="s2">
+  <div class="num">02</div>
+  <h2>サイトは「店」から「卸業者」になる</h2>
+  <p>投稿の中心にあるのは、この対比だった。</p>
+
+  <div class="layers">
+    <div class="layer">
+      <div class="id">旧</div>
+      <div class="nm">Google検索の時代</div>
+      <div class="ds">サイトは店だった。人が訪れ、記事を読み、広告や商品で稼げた。</div>
+    </div>
+    <div class="layer l3">
+      <div class="id">新</div>
+      <div class="nm">AI検索の時代</div>
+      <div class="ds">サイトは食材の卸業者になる。客が訪れるのはChatGPTで、AIが複数のサイトから仕入れ、一つの答えに仕立てる。客は完成した答えだけを読み、元のサイトを開かない。</div>
+    </div>
+  </div>
+
+  <div class="pull">客は完成した答えだけを読み、元のサイトを開かない。</div>
+
+  <p>すると運営者に必要なのは、記事の量産ではなくなる。料金・仕様・実績・更新日・根拠を、AIが誤解しない形で整えることのほうが効いてくる。</p>
+
+  <h3>そして、その基準は非公開のまま動く</h3>
+  <p>AIが何を引用先に選ぶかの採点基準は公開されていない。近さ、新しさ、専門性、一次情報かどうか——といった軸で選んでいると推測はできるが、確かめる手段がない。</p>
+  <p>問題は、その仕様がある日変わることだ。AI側のやり方が少し変わるだけで、昨日まで大量に引用されていたサイトが翌日にはほぼ消える。しかも従来のアクセス解析では、その変化を捉えられない。</p>
+</section>
+
+<section id="s3">
+  <div class="num">03</div>
+  <h2>そこに生まれる3つの商売</h2>
+  <p>投稿は、この不透明さそのものを商機として3つ挙げていた。いずれも「AIの答えの中で自社がどう扱われているか」を可視化するサービスで、すでに海外に先行例がある。</p>
+
+  <div class="biz">
+    <div class="biz-row">
+      <div class="biz-nm">&#9312; AI回答変動監視</div>
+      <div class="biz-co">OtterlyAI &#47; オーストリア</div>
+      <div class="biz-ds">複数のAI検索プラットフォームでの引用と言及を日次で追跡する。引用や言及の急変を翌日まで把握できない、という課題に対するサービス。</div>
+    </div>
+    <div class="biz-row">
+      <div class="biz-nm">&#9313; AI可視性ギャップ診断</div>
+      <div class="biz-co">Semrush &#47; 米国</div>
+      <div class="biz-ds">ChatGPTなどへのプロンプトと回答を大規模に蓄積し、地域別のデータベースとして提供する。媒体別・市場別の引用率を横断で比較できない、という課題に対するサービス。</div>
+    </div>
+    <div class="biz-row">
+      <div class="biz-nm">&#9314; 引用起点コンテンツ検証</div>
+      <div class="biz-co">Peec AI &#47; ドイツ</div>
+      <div class="biz-ds">どの情報源が影響しているか、可視性、評価の傾向をリアルタイムに地図化する。顧客のAI回答に影響する引用元を特定できない、という課題に対するサービス。</div>
+    </div>
+  </div>
+
+  <p>投稿自身も下振れに触れていた。AI側の引用仕様が再び変われば、これらのサービスが前提にしている計測の枠組みごと揺らぐ、という留保だ。</p>
+</section>
+
+<section id="s4">
+  <div class="num">04</div>
+  <h2>感想</h2>
+
+  <p>この話は、遠いニュースではなく今日の自分の買い物の話だと思った。</p>
+
+  <p>たとえば、新しくメイク道具を買うとき。これまでは検索をすれば、いろいろな肌質の人が書いたレビューが集まっていて、その中から自分に近い人の声を探すことができた。もしAIが体験談より公式情報を優先するようになれば、返ってくるのは成分や機能といった、売っている側の説明が中心になる。</p>
+
+  <p>公式の情報は正確だ。しかしそれは万人に向けた一般論でもあって、「私の肌に合うか」だけは書けない。個人差の大きい商品ほど、説明よりも自分に近い人の実感のほうが役に立つ。</p>
+
+  <p>どちらも正しい情報ではある。それでも、いま読んでいるのが「作った側の説明」なのか「使った側の実感」なのかを知っているかどうかで、受け取り方はまったく変わってくる。そして怖いのは、AIの答えがどちらの場合も同じ顔をして返ってくることだ。</p>
+
+  <h3>商売として</h3>
+
+  <p>見えないものを見えるようにする。商売として分かりやすいと思った。運営する側からすれば、自分がAIに引用されているかを確かめる手段がない。それを教えてくれるなら、代金を払う理由はある。</p>
+
+  <p>ただしこれは企業のための道具で、AIへの見せ方を上手に調整できる会社ほど、AIの答えに残りやすくなる。</p>
+
+  <p>成り立ちを考えると、やや奇妙な商売でもある。毎日監視する意味があるのは、一晩で状況がひっくり返るからだ。仕様が安定すれば、監視は不要になる。<strong>この商売が売っているのは、不安定さそのものだ。</strong>大きく育つとすれば、それは足元が揺れ続けているという意味でもあると感じた。</p>
+
+  <div class="pull">この商売が売っているのは、不安定さそのものだ。</div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div>第3部はここまで。</div>
+  <a class="nextlink" href="part4.html">第4部へ進む &rarr;</a>
+
+  <div class="src">
+    <strong>出典</strong><br>
+    &#12539;<a href="https://x.com/saasmeshi/status/2090256591836889118">@saasmeshi &#12398;X&#25237;&#31295;</a>&#65288;2026-08&#65289;<br>
+    &#12539;OtterlyAI &#65295; Semrush &#65295; Peec AI&#65288;&#25237;&#31295;&#20869;&#12391;&#35328;&#21450;&#12373;&#12428;&#12390;&#12356;&#12383;&#12469;&#12540;&#12499;&#12473;&#65289;
+  </div>
+</footer>
+
+</body>
+</html>
