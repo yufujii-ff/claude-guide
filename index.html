@@ -149,6 +149,8 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
   margin-left:8px;white-space:nowrap;vertical-align:2px}
 .appendix{margin-top:30px;padding:18px 22px;border:1px dashed var(--line);
   border-radius:var(--r);font-size:13.5px;line-height:1.85;color:var(--sub)}
+
+.secnote{font-size:13.5px;color:var(--sub);margin:-8px 0 16px}
 </style>
 </head>
 <body>
@@ -174,8 +176,9 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
 <main class="wrap">
 
 <section id="toc">
-  <div class="num">INDEX</div>
+  <div class="num">READ &#47; 読む用</div>
   <h2>目次</h2>
+  <p class="secnote">通して読むための入口。第1部から順に読むことを想定しているが、第2部以降は単体でも読める。</p>
 
   <ul class="toc">
     <li>
@@ -215,11 +218,33 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
       </a>
     </li>
   </ul>
+</section>
 
-  <div class="appendix">
-    <strong>付録</strong>：<a href="harness.html">Claude Code ハーネス入門 — .claude/ を読み解く</a><br>
-    第1部を書く前にまとめた、設定ファイル群の詳細版。CLAUDE.md から settings.json までの5層と、スキル設計・サブエージェント・外部連携までを一枚にまとめてある。
-  </div>
+<section id="ref">
+  <div class="num">REFERENCE &#47; 引く用</div>
+  <h2>引く用</h2>
+  <p class="secnote">通読ではなく、必要な箇所だけを引くための入口。</p>
+
+  <ul class="toc">
+    <li>
+      <a href="index-ref.html">
+        <div class="no">INDEX</div>
+        <div class="bd">
+          <div class="ti">索引</div>
+          <div class="ds">用語やトピックから、全4部と付録の該当箇所へ直接飛ぶ。「あの話はどこだったか」を引くためのページ。</div>
+        </div>
+      </a>
+    </li>
+    <li>
+      <a href="harness.html">
+        <div class="no">GUIDE</div>
+        <div class="bd">
+          <div class="ti">Claude Code ハーネス入門</div>
+          <div class="ds">.claude&#47; の5層（CLAUDE.md &#47; rules &#47; skills &#47; agents &#47; settings.json）を一枚にまとめた詳細版。スキル設計・サブエージェント・外部連携まで。</div>
+        </div>
+      </a>
+    </li>
+  </ul>
 </section>
 
 </main>
