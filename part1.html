@@ -92,7 +92,7 @@ td code{background:transparent;padding:0;color:var(--accent);font-weight:700}
 
 /* ---- 3層図 ---- */
 .stack{margin:26px 0;border:1px solid var(--line);border-radius:var(--r);
-  overflow:hidden;background:var(--paper)}
+  overflow:visible;background:var(--paper)}
 .layer{padding:16px 20px;border-bottom:1px solid var(--line-soft);
   display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
 .layer:last-child{border-bottom:none}
@@ -127,6 +127,30 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
   .pull{font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---- 用語の補足（ホバー / タップ / キーボード） ---- */
+.tip{position:relative;border-bottom:1px dashed var(--accent);cursor:help}
+.tip::after{content:attr(data-tip);position:absolute;left:50%;
+  bottom:calc(100% + 11px);transform:translateX(-50%);
+  width:max-content;max-width:min(300px,76vw);
+  background:var(--ink);color:#F1F2F6;font-family:var(--body);
+  font-size:12.5px;font-weight:400;line-height:1.75;text-align:left;
+  padding:10px 13px;border-radius:var(--r);
+  box-shadow:0 4px 16px rgba(21,23,28,.18);z-index:30}
+.tip::before{content:"";position:absolute;left:50%;bottom:calc(100% + 5px);
+  transform:translateX(-50%);border:5px solid transparent;
+  border-top-color:var(--ink);z-index:30}
+.tip::after,.tip::before{opacity:0;visibility:hidden;
+  pointer-events:none;transition:opacity .16s ease}
+.tip:hover::after,.tip:hover::before,
+.tip:focus::after,.tip:focus::before{opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){
+  .tip::after,.tip::before{transition:none}
+}
+
+/* 図の中の補足は左端そろえ（画面外へのはみ出し防止） */
+.stack .tip::after{left:0;transform:none}
+.stack .tip::before{left:16px}
 </style>
 </head>
 <body>
@@ -193,22 +217,22 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);
   <div class="stack">
     <div class="layer">
       <span class="id">①</span>
-      <span class="nm">Claude（モデル）</span>
+      <span class="nm"><span class="tip" tabindex="0" data-tip="AIモデル本体。">Claude（モデル）</span></span>
       <span class="ds">判断する部分。頭脳。Claude Code 専用ではなく、チャットで動いているものと同じ種類</span>
     </div>
     <div class="layer">
       <span class="id">②</span>
-      <span class="nm">Claude Code</span>
+      <span class="nm"><span class="tip" tabindex="0" data-tip="ターミナルなどで動くプログラム。AI自身が実際にファイルを読み書きしたりコマンドを実行する">Claude Code</span></span>
       <span class="ds">ツール本体。上のループを回し、ツールを実行し、権限をチェックする仕組み</span>
     </div>
     <div class="layer l3">
       <span class="id">③</span>
-      <span class="nm">.claude/</span>
+      <span class="nm"><span class="tip" tabindex="0" data-tip="設定ファイルを入れるフォルダ。お願い事と禁止事項を書く">.claude/</span></span>
       <span class="ds">設定ファイル群。ループの振る舞いを外から調整する。自分が書く場所</span>
     </div>
   </div>
 
-  <p>面白いのは、<strong>② が「AI」ではない</strong>ことだ。②はAIに手足をつけて回す機構であって、賢さそのものは①が担っている。この分離が分かると、「設定を変えてもモデルは賢くならない」という当たり前のことが腑に落ちる。</p>
+  <p>面白いのは、<strong class="tip" tabindex="0" data-tip="②はモデルを内蔵しているのではなく、毎回①をAPI経由で呼び出している。">② が「AI」ではない</strong>ことだ。②はAIに手足をつけて回す機構であって、賢さそのものは①が担っている。この分離が分かると、「設定を変えてもモデルは賢くならない」という当たり前のことが腑に落ちる。</p>
 
   <h3>入口は1つではない</h3>
   <p>Claude Code は2025年2月に限定リサーチプレビューとして公開され、同年5月に一般提供が始まった。登場当初はターミナル中心だったが、2026年時点ではターミナル、IDE、デスクトップアプリ、ブラウザから使える。Remote Control を使えば、手元のマシンで動いているセッションをスマートフォンから続きから操作することもできる。</p>
